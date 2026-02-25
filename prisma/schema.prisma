@@ -1,0 +1,703 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  USER
+  SUPER_ADMIN
+  STATS_VIEWER
+}
+enum UserMode {
+  BASIC
+  DETAILED
+}
+enum ContractType {
+  EMPLEADO
+  CONTRATISTA
+  PENSIONADO
+  INDEPENDIENTE
+}
+enum SalaryFrequency {
+  MONTHLY
+  BIWEEKLY
+  WEEKLY
+}
+enum WalletType {
+  BANK
+  CASH
+  DIGITAL
+  LOW_VALUE_DEPOSIT
+}
+enum WalletTransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER_OUT
+  TRANSFER_IN
+  CASH_WITHDRAWAL
+  CASH_DEPOSIT
+  IMPUESTO_4X1000
+  INVESTMENT_OUT
+  INVESTMENT_IN
+  ADJUSTMENT
+}
+enum CashWithdrawalChannel {
+  ATM
+  CORRESPONSAL
+  VENTANILLA
+  OTRO
+}
+enum IncomeType {
+  SALARIO
+  PRIMA
+  COMISION
+  AUXILIO_TRANSPORTE_LEGAL
+  AUXILIO_CONECTIVIDAD_LEGAL
+  AUXILIO_CONECTIVIDAD_EXTRALEGAL
+  HONORARIOS
+  PENSION
+  INCAPACIDAD
+  VACACIONES
+  OTRO
+}
+enum RecurrencePeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+enum PaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+}
+enum InterestRateType {
+  EA
+  MV
+  TV
+  NOMINAL_MENSUAL
+  OTRO
+}
+enum RateSource {
+  USER_INPUT
+  ADMIN_REFERENCE
+  RECONCILIATION
+}
+enum InsuranceType {
+  FIXED
+  RATE_ON_BALANCE
+  UNKNOWN
+}
+enum LoanType {
+  CONSUMO
+  VIVIENDA
+  LIBRE_INVERSION
+  AGROPECUARIO
+  OTRO
+}
+enum AmortizationType {
+  FRENCH
+  GERMAN
+}
+enum PaymentFrequency {
+  MONTHLY
+  BIMONTHLY
+  QUARTERLY
+  SEMIANNUAL
+  ANNUAL
+  IRREGULAR
+}
+enum InvestmentType {
+  CDT
+  BOLSILLO_AHORRO
+  OTRO
+}
+enum InvestmentStatus {
+  ACTIVE
+  CLOSED
+}
+enum FinancialEntityType {
+  BANCO
+  COOPERATIVA
+  FINTECH
+  OTRO
+}
+enum ReferenceRateType {
+  EA
+  MV
+  TV
+  NOMINAL_MENSUAL
+}
+enum NotificationType {
+  TAX_THRESHOLD
+  PAYMENT_DUE
+  RECURRING_EXPENSE_DUE
+  RECURRING_EXPENSE_OVERDUE
+  SS_PAYMENT
+  RECONCILE_REMINDER
+  CDT_MATURITY
+  FOURX1000_ALERT
+  PRIMA_REMINDER
+  ANT_EXPENSE_INSIGHT
+  MONTHLY_SUMMARY_EMAIL
+  REFERENCE_RATE_UPDATED
+  REFERENCE_RATE_PENDING
+  ENGAGEMENT_NUDGE
+  DBM_INFLOW_WARNING
+  DBM_OUTFLOW_WARNING
+  DBM_GMF_THRESHOLD
+  FISCAL_PARAMS_PENDING
+}
+enum NotificationChannel {
+  PUSH
+  EMAIL
+  IN_APP
+}
+enum AuditAction {
+  SELECT
+  INSERT
+  UPDATE
+  DELETE
+}
+enum ChangeType {
+  CORRECTION
+  ADJUSTMENT
+}
+enum ReconciliationDiffType {
+  UNREGISTERED_EXPENSE
+  UNREGISTERED_INCOME
+  BANK_COMMISSION
+  GMF_NOT_RECORDED
+  CDT_PENDING
+  ROUNDING_ERROR
+  UNIDENTIFIED_FAVORABLE
+  UNIDENTIFIED_UNFAVORABLE
+  ADJUSTMENT
+}
+
+model User {
+  id                String    @id @default(uuid()) @db.Uuid
+  email             String    @unique
+  passwordHash      String    @map("password_hash")
+  role              UserRole  @default(USER)
+  userMode          UserMode  @default(BASIC) @map("user_mode")
+  encryptionKeyHash String?   @map("encryption_key_hash")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
+  profile           UserProfile?
+  wallets           Wallet[]
+  incomeRecords     IncomeRecord[]
+  expenses          Expense[]
+  recurringExpenses RecurringExpense[]
+  creditCards       CreditCard[]
+  loans             Loan[]
+  investments       Investment[]
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+  employmentPeriods EmploymentPeriod[]
+  invitationTokens  InvitationToken[]
+  createdEntities   FinancialEntity[]  @relation("CreatedByUser")
+  referenceRates    ReferenceRate[]
+  glossaryTerms     GlossaryTerm[]
+  @@map("users")
+}
+
+model InvitationToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  email     String
+  token     String    @unique
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdBy String    @map("created_by") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at")
+  creator   User      @relation(fields: [createdBy], references: [id])
+  @@map("invitation_tokens")
+}
+
+model UserProfile {
+  id                       String          @id @default(uuid()) @db.Uuid
+  userId                   String          @unique @map("user_id") @db.Uuid
+  contractType             ContractType?   @map("contract_type")
+  grossSalary              String?         @map("gross_salary")
+  netSalary                String?         @map("net_salary")
+  integralSalary           Boolean         @default(false) @map("integral_salary")
+  hasDependents            Boolean         @default(false) @map("has_dependents")
+  prepaidMedicine          Boolean         @default(false) @map("prepaid_medicine")
+  salaryFrequency          SalaryFrequency @default(MONTHLY) @map("salary_frequency")
+  salaryPaymentDay         Int?            @map("salary_payment_day")
+  salaryPaymentDay2        Int?            @map("salary_payment_day_2")
+  salaryPaymentDayLastBiz  Boolean         @default(false) @map("salary_payment_day_last_business")
+  onboardingCompleted      Boolean         @default(false) @map("onboarding_completed")
+  profileLevel             UserMode        @default(BASIC) @map("profile_level")
+  activeEmploymentPeriodId String?         @map("active_employment_period_id") @db.Uuid
+  createdAt                DateTime        @default(now()) @map("created_at")
+  updatedAt                DateTime        @updatedAt @map("updated_at")
+  user                     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("user_profiles")
+}
+
+model EmploymentPeriod {
+  id                String    @id @default(uuid()) @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  employerName      String    @map("employer_name")
+  contractStartDate DateTime  @map("contract_start_date") @db.Date
+  contractEndDate   DateTime? @map("contract_end_date") @db.Date
+  grossSalary       String    @map("gross_salary")
+  isActive          Boolean   @default(true) @map("is_active")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("employment_periods")
+}
+
+model FiscalParameter {
+  id          String   @id @default(uuid()) @db.Uuid
+  year        Int
+  key         String
+  valuePesos  Decimal? @map("value_pesos") @db.Decimal(18, 6)
+  valueUvt    Decimal? @map("value_uvt") @db.Decimal(10, 4)
+  isUvtBased  Boolean  @default(false) @map("is_uvt_based")
+  description String?
+  updatedBy   String?  @map("updated_by") @db.Uuid
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  @@unique([year, key])
+  @@map("fiscal_parameters")
+}
+
+model AppConfig {
+  id          String   @id @default(uuid()) @db.Uuid
+  key         String   @unique
+  value       String
+  description String?
+  updatedBy   String?  @map("updated_by") @db.Uuid
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  @@map("app_config")
+}
+
+model GlossaryTerm {
+  id         String   @id @default(uuid()) @db.Uuid
+  term       String   @unique
+  definition String
+  context    String?
+  createdBy  String   @map("created_by") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  creator    User     @relation(fields: [createdBy], references: [id])
+  @@map("glossary_terms")
+}
+
+model FinancialEntity {
+  id             String              @id @default(uuid()) @db.Uuid
+  name           String
+  entityType     FinancialEntityType @map("entity_type")
+  nit            String?
+  isActive       Boolean             @default(true) @map("is_active")
+  isPublic       Boolean             @default(true) @map("is_public")
+  createdBy      String?             @map("created_by") @db.Uuid
+  createdAt      DateTime            @default(now()) @map("created_at")
+  creator        User?               @relation("CreatedByUser", fields: [createdBy], references: [id])
+  creditCards    CreditCard[]
+  loans          Loan[]
+  investments    Investment[]
+  referenceRates ReferenceRate[]
+  @@map("financial_entities")
+}
+
+model ReferenceRate {
+  id          String            @id @default(uuid()) @db.Uuid
+  periodMonth DateTime          @map("period_month") @db.Date
+  rateValue   Decimal           @map("rate_value") @db.Decimal(10, 6)
+  rateType    ReferenceRateType @map("rate_type")
+  source      String?
+  entityId    String?           @map("entity_id") @db.Uuid
+  createdBy   String            @map("created_by") @db.Uuid
+  createdAt   DateTime          @default(now()) @map("created_at")
+  creator     User              @relation(fields: [createdBy], references: [id])
+  entity      FinancialEntity?  @relation(fields: [entityId], references: [id])
+  @@unique([periodMonth, rateType])
+  @@map("reference_rates")
+}
+
+model Wallet {
+  id                     String     @id @default(uuid()) @db.Uuid
+  userId                 String     @map("user_id") @db.Uuid
+  name                   String
+  type                   WalletType
+  accountNumber          String?    @map("account_number")
+  bankName               String?    @map("bank_name")
+  is4x1000Exempt         Boolean    @default(false) @map("is_4x1000_exempt")
+  currentBalance         String     @default("0") @map("current_balance")
+  isActive               Boolean    @default(true) @map("is_active")
+  isLowValueDeposit      Boolean    @default(false) @map("is_low_value_deposit")
+  monthlyInflowLimitUvt  Decimal    @default(210.5) @map("monthly_inflow_limit_uvt") @db.Decimal(8, 2)
+  monthlyOutflowLimitUvt Decimal    @default(210.5) @map("monthly_outflow_limit_uvt") @db.Decimal(8, 2)
+  gmfExemptLimitUvt      Decimal    @default(65) @map("gmf_exempt_limit_uvt") @db.Decimal(8, 2)
+  monthlyInflowUsed      String     @default("0") @map("monthly_inflow_used")
+  monthlyOutflowUsed     String     @default("0") @map("monthly_outflow_used")
+  gmfOutflowUsed         String     @default("0") @map("gmf_outflow_used")
+  resetDate              DateTime?  @map("reset_date") @db.Date
+  createdAt              DateTime   @default(now()) @map("created_at")
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pockets            Pocket[]
+  transactions       WalletTransaction[] @relation("WalletTransactions")
+  incomingTransfers  WalletTransaction[] @relation("DestinationWallet")
+  reconciliations    Reconciliation[]
+  recurringExpenses  RecurringExpense[]
+  expenses           Expense[]
+  investmentsSource  Investment[]        @relation("InvestmentSourceWallet")
+  investmentsDest    Investment[]        @relation("InvestmentDestWallet")
+  @@map("wallets")
+}
+
+model Pocket {
+  id            String    @id @default(uuid()) @db.Uuid
+  walletId      String    @map("wallet_id") @db.Uuid
+  name          String
+  targetAmount  String?   @map("target_amount")
+  currentAmount String    @default("0") @map("current_amount")
+  goalDate      DateTime? @map("goal_date") @db.Date
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  wallet        Wallet    @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  @@map("pockets")
+}
+
+model WalletTransaction {
+  id                    String                 @id @default(uuid()) @db.Uuid
+  walletId              String                 @map("wallet_id") @db.Uuid
+  type                  WalletTransactionType
+  amount                String
+  description           String?
+  effectiveDate         DateTime               @map("effective_date") @db.Date
+  destinationWalletId   String?                @map("destination_wallet_id") @db.Uuid
+  linkedTxId            String?                @map("linked_tx_id") @db.Uuid
+  cashWithdrawalChannel CashWithdrawalChannel? @map("cash_withdrawal_channel")
+  gmfApplied            Boolean                @default(false) @map("gmf_applied")
+  gmfAmount             String?                @map("gmf_amount")
+  referenceId           String?                @map("reference_id") @db.Uuid
+  referenceType         String?                @map("reference_type")
+  createdAt             DateTime               @default(now()) @map("created_at")
+  wallet            Wallet              @relation("WalletTransactions", fields: [walletId], references: [id])
+  destinationWallet Wallet?             @relation("DestinationWallet", fields: [destinationWalletId], references: [id])
+  linkedTx          WalletTransaction?  @relation("LinkedTransaction", fields: [linkedTxId], references: [id])
+  linkedByTx        WalletTransaction[] @relation("LinkedTransaction")
+  @@map("wallet_transactions")
+}
+
+model Category {
+  id        String     @id @default(uuid()) @db.Uuid
+  userId    String?    @map("user_id") @db.Uuid
+  name      String
+  parentId  String?    @map("parent_id") @db.Uuid
+  level     Int        @default(1)
+  icon      String?
+  isSystem  Boolean    @default(false) @map("is_system")
+  isHidden  Boolean    @default(false) @map("is_hidden")
+  createdAt DateTime   @default(now()) @map("created_at")
+  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryHierarchy")
+  expenses  Expense[]
+  recurring RecurringExpense[]
+  @@map("categories")
+}
+
+model IncomeRecord {
+  id                  String     @id @default(uuid()) @db.Uuid
+  userId              String     @map("user_id") @db.Uuid
+  periodMonth         DateTime   @map("period_month") @db.Date
+  incomeType          IncomeType @map("income_type")
+  isTransportAid      Boolean    @default(false) @map("is_transport_aid")
+  isConstitutivePrima Boolean    @default(false) @map("is_constitutive_prima")
+  isVariable          Boolean    @default(false) @map("is_variable")
+  grossAmount         String     @map("gross_amount")
+  netAmount           String?    @map("net_amount")
+  ibc                 String?
+  healthDeduction     String?    @map("health_deduction")
+  pensionDeduction    String?    @map("pension_deduction")
+  fspDeduction        String?    @map("fsp_deduction")
+  retencionFuente     String?    @map("retencion_fuente")
+  variableIncomeNotes String?    @map("variable_income_notes")
+  notes               String?
+  source              String?
+  walletId            String?    @map("wallet_id") @db.Uuid
+  createdAt           DateTime   @default(now()) @map("created_at")
+  user                User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("income_records")
+}
+
+model RecurringExpense {
+  id                 String           @id @default(uuid()) @db.Uuid
+  userId             String           @map("user_id") @db.Uuid
+  name               String
+  estimatedAmount    String           @map("estimated_amount")
+  categoryId         String?          @map("category_id") @db.Uuid
+  recurrencePeriod   RecurrencePeriod @default(MONTHLY) @map("recurrence_period")
+  estimatedDay       Int?             @map("estimated_day")
+  walletId           String           @map("wallet_id") @db.Uuid
+  isAntExpense       Boolean          @default(false) @map("is_ant_expense")
+  isActive           Boolean          @default(true) @map("is_active")
+  linkedCreditCardId String?          @map("linked_credit_card_id") @db.Uuid
+  linkedLoanId       String?          @map("linked_loan_id") @db.Uuid
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category           Category?         @relation(fields: [categoryId], references: [id])
+  wallet             Wallet            @relation(fields: [walletId], references: [id])
+  creditCard         CreditCard?       @relation(fields: [linkedCreditCardId], references: [id])
+  loan               Loan?             @relation(fields: [linkedLoanId], references: [id])
+  expenses           Expense[]
+  investments        Investment[]
+  @@map("recurring_expenses")
+}
+
+model Expense {
+  id                 String           @id @default(uuid()) @db.Uuid
+  userId             String           @map("user_id") @db.Uuid
+  name               String
+  amount             String
+  categoryId         String?          @map("category_id") @db.Uuid
+  effectiveDate      DateTime         @map("effective_date") @db.Date
+  estimatedDate      DateTime?        @map("estimated_date") @db.Date
+  recurringExpenseId String?          @map("recurring_expense_id") @db.Uuid
+  paymentMethod      PaymentMethod    @default(TRANSFER) @map("payment_method")
+  walletId           String           @map("wallet_id") @db.Uuid
+  isAntExpense       Boolean          @default(false) @map("is_ant_expense")
+  notes              String?
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category           Category?         @relation(fields: [categoryId], references: [id])
+  wallet             Wallet            @relation(fields: [walletId], references: [id])
+  recurringExpense   RecurringExpense? @relation(fields: [recurringExpenseId], references: [id])
+  @@map("expenses")
+}
+
+model CreditCard {
+  id                     String            @id @default(uuid()) @db.Uuid
+  userId                 String            @map("user_id") @db.Uuid
+  alias                  String
+  lastFourDigits         String?           @map("last_four_digits")
+  financialEntityId      String?           @map("financial_entity_id") @db.Uuid
+  bankName               String?           @map("bank_name")
+  creditLimit            String?           @map("credit_limit")
+  lastKnownRate          Decimal?          @map("last_known_rate") @db.Decimal(10, 6)
+  lastKnownRateType      InterestRateType? @map("last_known_rate_type")
+  cutDay                 Int               @map("cut_day")
+  paymentDay             Int               @map("payment_day")
+  hasManagementFee       Boolean           @default(false) @map("has_management_fee")
+  managementFeeAmount    String?           @map("management_fee_amount")
+  hasInsurance           Boolean           @default(false) @map("has_insurance")
+  insuranceMonthlyAmount String?           @map("insurance_monthly_amount")
+  insuranceRate          Decimal?          @map("insurance_rate") @db.Decimal(8, 6)
+  insuranceType          InsuranceType     @default(UNKNOWN) @map("insurance_type")
+  currentBalance         String            @default("0") @map("current_balance")
+  estimatedNextPayment   String?           @map("estimated_next_payment")
+  isActive               Boolean           @default(true) @map("is_active")
+  createdAt              DateTime          @default(now()) @map("created_at")
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  financialEntity   FinancialEntity?  @relation(fields: [financialEntityId], references: [id])
+  purchases         CcPurchase[]
+  statements        CcStatement[]
+  changeHistory     CcChangeHistory[]
+  recurringExpenses RecurringExpense[]
+  @@map("credit_cards")
+}
+
+model CcPurchase {
+  id                     String            @id @default(uuid()) @db.Uuid
+  creditCardId           String            @map("credit_card_id") @db.Uuid
+  description            String
+  amount                 String
+  purchaseDate           DateTime          @map("purchase_date") @db.Date
+  billingPeriod          DateTime?         @map("billing_period") @db.Date
+  billingPeriodConfirmed Boolean           @default(false) @map("billing_period_confirmed")
+  nearCutoff             Boolean           @default(false) @map("near_cutoff")
+  installments           Int               @default(1)
+  installmentsPaid       Int               @default(0) @map("installments_paid")
+  interestRate           Decimal?          @map("interest_rate") @db.Decimal(10, 6)
+  interestRateType       InterestRateType? @map("interest_rate_type")
+  interestRateTem        Decimal?          @map("interest_rate_tem") @db.Decimal(10, 8)
+  rateSource             RateSource        @default(USER_INPUT) @map("rate_source")
+  rateConfirmed          Boolean           @default(false) @map("rate_confirmed")
+  interestAssumed        Boolean           @default(true) @map("interest_assumed")
+  firstPaymentDate       DateTime?         @map("first_payment_date") @db.Date
+  firstPaymentAmount     String?           @map("first_payment_amount")
+  firstPaymentProrated   Boolean           @default(false) @map("first_payment_prorated")
+  categoryId             String?           @map("category_id") @db.Uuid
+  createdAt              DateTime          @default(now()) @map("created_at")
+  creditCard    CreditCard        @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
+  changeHistory CcChangeHistory[]
+  @@map("cc_purchases")
+}
+
+model CcStatement {
+  id               String     @id @default(uuid()) @db.Uuid
+  creditCardId     String     @map("credit_card_id") @db.Uuid
+  periodStart      DateTime   @map("period_start") @db.Date
+  periodEnd        DateTime   @map("period_end") @db.Date
+  statementBalance String     @map("statement_balance")
+  paymentMade      String?    @map("payment_made")
+  reconciled       Boolean    @default(false)
+  reconciledAt     DateTime?  @map("reconciled_at")
+  notes            String?
+  createdAt        DateTime   @default(now()) @map("created_at")
+  creditCard       CreditCard @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
+  @@map("cc_statements")
+}
+
+model CcChangeHistory {
+  id           String      @id @default(uuid()) @db.Uuid
+  creditCardId String?     @map("credit_card_id") @db.Uuid
+  ccPurchaseId String?     @map("cc_purchase_id") @db.Uuid
+  changedBy    String      @map("changed_by") @db.Uuid
+  changeType   ChangeType  @map("change_type")
+  oldValue     Json?       @map("old_value")
+  newValue     Json?       @map("new_value")
+  reason       String?
+  createdAt    DateTime    @default(now()) @map("created_at")
+  creditCard   CreditCard? @relation(fields: [creditCardId], references: [id])
+  purchase     CcPurchase? @relation(fields: [ccPurchaseId], references: [id])
+  @@map("cc_change_history")
+}
+
+model Loan {
+  id                   String            @id @default(uuid()) @db.Uuid
+  userId               String            @map("user_id") @db.Uuid
+  type                 LoanType
+  financialEntityId    String?           @map("financial_entity_id") @db.Uuid
+  entityName           String?           @map("entity_name")
+  originalAmount       String            @map("original_amount")
+  outstandingBalance   String            @map("outstanding_balance")
+  installmentAmount    String?           @map("installment_amount")
+  remainingTermMonths  Int?              @map("remaining_term_months")
+  interestRate         Decimal?          @map("interest_rate") @db.Decimal(10, 6)
+  interestRateType     InterestRateType? @map("interest_rate_type")
+  amortizationType     AmortizationType? @map("amortization_type")
+  paymentFrequency     PaymentFrequency  @default(MONTHLY) @map("payment_frequency")
+  paymentDay           Int?              @map("payment_day")
+  firstPaymentDate     DateTime?         @map("first_payment_date") @db.Date
+  firstPaymentAmount   String?           @map("first_payment_amount")
+  firstPaymentProrated Boolean           @default(false) @map("first_payment_prorated")
+  notes                String?
+  startDate            DateTime?         @map("start_date") @db.Date
+  isActive             Boolean           @default(true) @map("is_active")
+  createdAt            DateTime          @default(now()) @map("created_at")
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  financialEntity   FinancialEntity?   @relation(fields: [financialEntityId], references: [id])
+  recurringExpenses RecurringExpense[]
+  amortizationRows  LoanAmortization[]
+  @@map("loans")
+}
+
+model LoanAmortization {
+  id           String   @id @default(uuid()) @db.Uuid
+  loanId       String   @map("loan_id") @db.Uuid
+  periodNumber Int      @map("period_number")
+  paymentDate  DateTime @map("payment_date") @db.Date
+  payment      String
+  principal    String
+  interest     String
+  balance      String
+  createdAt    DateTime @default(now()) @map("created_at")
+  loan         Loan     @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  @@map("loan_amortization")
+}
+
+model Investment {
+  id                  String            @id @default(uuid()) @db.Uuid
+  userId              String            @map("user_id") @db.Uuid
+  type                InvestmentType
+  financialEntityId   String?           @map("financial_entity_id") @db.Uuid
+  entityName          String?           @map("entity_name")
+  initialAmount       String            @map("initial_amount")
+  openDate            DateTime          @map("open_date") @db.Date
+  closeDate           DateTime?         @map("close_date") @db.Date
+  interestRate        Decimal?          @map("interest_rate") @db.Decimal(10, 6)
+  interestRateType    InterestRateType? @map("interest_rate_type")
+  expectedInterest    String?           @map("expected_interest")
+  actualInterest      String?           @map("actual_interest")
+  expectedFinalAmount String?           @map("expected_final_amount")
+  actualFinalAmount   String?           @map("actual_final_amount")
+  status              InvestmentStatus  @default(ACTIVE)
+  walletId            String            @map("wallet_id") @db.Uuid
+  destinationWalletId String?           @map("destination_wallet_id") @db.Uuid
+  recurringExpenseId  String?           @map("recurring_expense_id") @db.Uuid
+  createdAt           DateTime          @default(now()) @map("created_at")
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  financialEntity  FinancialEntity?  @relation(fields: [financialEntityId], references: [id])
+  sourceWallet     Wallet            @relation("InvestmentSourceWallet", fields: [walletId], references: [id])
+  destWallet       Wallet?           @relation("InvestmentDestWallet", fields: [destinationWalletId], references: [id])
+  recurringExpense RecurringExpense? @relation(fields: [recurringExpenseId], references: [id])
+  flows            InvestmentFlow[]
+  @@map("investments")
+}
+
+model InvestmentFlow {
+  id           String     @id @default(uuid()) @db.Uuid
+  investmentId String     @map("investment_id") @db.Uuid
+  flowDate     DateTime   @map("flow_date") @db.Date
+  amount       String
+  description  String?
+  createdAt    DateTime   @default(now()) @map("created_at")
+  investment   Investment @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+  @@map("investment_flows")
+}
+
+model Reconciliation {
+  id           String    @id @default(uuid()) @db.Uuid
+  walletId     String    @map("wallet_id") @db.Uuid
+  periodDate   DateTime  @map("period_date") @db.Date
+  systemBalance  String  @map("system_balance")
+  extractBalance String  @map("extract_balance")
+  delta          String
+  reconciled     Boolean @default(false)
+  reconciledAt   DateTime? @map("reconciled_at")
+  notes          String?
+  createdAt      DateTime  @default(now()) @map("created_at")
+  wallet       Wallet                @relation(fields: [walletId], references: [id])
+  items        ReconciliationItem[]
+  @@map("reconciliations")
+}
+
+model ReconciliationItem {
+  id                String                 @id @default(uuid()) @db.Uuid
+  reconciliationId  String                 @map("reconciliation_id") @db.Uuid
+  differenceAmount  String                 @map("difference_amount")
+  differenceType    ReconciliationDiffType @map("difference_type")
+  notes             String?
+  resolved          Boolean                @default(false)
+  createdAt         DateTime               @default(now()) @map("created_at")
+  reconciliation    Reconciliation         @relation(fields: [reconciliationId], references: [id], onDelete: Cascade)
+  @@map("reconciliation_items")
+}
+
+model Notification {
+  id          String              @id @default(uuid()) @db.Uuid
+  userId      String              @map("user_id") @db.Uuid
+  type        NotificationType
+  title       String
+  body        String
+  channel     NotificationChannel
+  isRead      Boolean             @default(false) @map("is_read")
+  autoDismiss Boolean             @default(false) @map("auto_dismiss")
+  scheduledAt DateTime?           @map("scheduled_at")
+  sentAt      DateTime?           @map("sent_at")
+  createdAt   DateTime            @default(now()) @map("created_at")
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("notifications")
+}
+
+model AuditLog {
+  id         String      @id @default(uuid()) @db.Uuid
+  actorId    String      @map("actor_id") @db.Uuid
+  tableName  String      @map("table_name")
+  action     AuditAction
+  recordId   String?     @map("record_id") @db.Uuid
+  ipAddress  String?     @map("ip_address")
+  createdAt  DateTime    @default(now()) @map("created_at")
+  actor      User        @relation(fields: [actorId], references: [id])
+  @@map("audit_log")
+}
