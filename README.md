@@ -110,3 +110,4 @@ npx prisma studio
 
 Decisiones de arquitectura, reglas de negocio y modelo de datos:
 → `project-docs/budget-app/`
+<!-- ia-scaffolding:managed -->
