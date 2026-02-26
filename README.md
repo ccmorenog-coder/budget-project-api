@@ -58,9 +58,12 @@ La API queda disponible en `http://localhost:3001`.
 | `NODE_ENV` | Entorno | `development` |
 | `PORT` | Puerto del servidor | `3001` |
 | `SERVER_MASTER_SECRET` | Secreto maestro para cifrado AES-256 | `string-largo-aleatorio` |
-| `JWT_SECRET` | Secreto para firmar JWT | `change-this` |
-| `JWT_EXPIRATION` | TTL del access token | `15m` |
-| `JWT_REFRESH_EXPIRATION` | TTL del refresh token | `7d` |
+| `JWT_SECRET` | Secreto para firmar access JWT | `change-this` |
+| `JWT_REFRESH_SECRET` | Secreto para firmar refresh JWT | `change-this-refresh` |
+| `JWT_ACCESS_EXPIRES_IN` | TTL del access token | `15m` |
+| `JWT_REFRESH_EXPIRES_IN` | TTL del refresh token | `7d` |
+| `SUPER_ADMIN_EMAIL` | Email del SUPER_ADMIN inicial (seed) | `admin@budget-app.local` |
+| `SUPER_ADMIN_PASSWORD` | Password del SUPER_ADMIN inicial (seed) | `Admin1234!` |
 
 > Ver `.env.example` para la lista completa.
 
@@ -77,7 +80,7 @@ La API queda disponible en `http://localhost:3001`.
 | `npm run test:e2e` | Tests end-to-end |
 | `npm run test:cov` | Reporte de cobertura |
 | `npx prisma migrate dev --name <desc>` | Crear y aplicar nueva migración |
-| `npx prisma db seed` | Ejecutar seed (parámetros fiscales, categorías, entidades) |
+| `npx prisma db seed` | Ejecutar seed (parámetros fiscales, categorías, entidades, SUPER_ADMIN) |
 | `npx prisma studio` | Visor visual de la base de datos |
 
 ---
@@ -86,7 +89,7 @@ La API queda disponible en `http://localhost:3001`.
 
 - **Schema**: `prisma/schema.prisma` — fuente de verdad
 - **Migración inicial**: `20260225234738_init` — todos los modelos del plan It.0
-- **Seed incluye**: parámetros fiscales 2026 (UVT, SMLMV, GMF, topes DBM), app_config, 11 categorías sistema con subcategorías, 19 entidades financieras colombianas
+- **Seed incluye**: parámetros fiscales 2026 (UVT, SMLMV, GMF, topes DBM), app_config, 11 categorías sistema con subcategorías, 19 entidades financieras colombianas, SUPER_ADMIN inicial
 
 ```bash
 # Reset completo (solo dev — destruye todos los datos)
@@ -100,9 +103,21 @@ npx prisma studio
 
 ## Visión general de la API
 
-- **Base URL**: `http://localhost:3001/api`
+- **Base URL**: `http://localhost:3001`
 - **Auth**: Bearer JWT — header `Authorization: Bearer <token>` en rutas protegidas
-- **Docs Swagger**: `http://localhost:3001/api/docs` *(disponible en It.1)*
+- **Guard global**: todas las rutas requieren JWT excepto las marcadas `@Public()`
+- **Validación**: `ValidationPipe` global — `whitelist`, `forbidNonWhitelisted`, `transform`
+- **Rate limiting**: 60 req/min global; 5 req/min en `/auth/login` y `/auth/register`
+- **Docs Swagger**: `http://localhost:3001/api/docs`
+
+### Endpoints disponibles (It.1)
+
+| Método | Ruta | Auth | Rate limit | Descripción |
+|--------|------|------|------------|-------------|
+| POST | `/auth/register` | Público | 5/min | Registro con token de invitación |
+| POST | `/auth/login` | Público | 5/min | Login — devuelve accessToken + refreshToken |
+| POST | `/auth/refresh` | Público | — | Rota el refresh token — devuelve nuevo par |
+| POST | `/auth/invite` | SUPER_ADMIN | — | Genera token de invitación para un email |
 
 ---
 

@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import * as bcrypt from "bcryptjs";
 import "dotenv/config";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
@@ -122,6 +123,24 @@ async function main() {
     }
   }
   console.log("  financial_entities done");
+
+  console.log("Seeding SUPER_ADMIN...");
+  const superAdminEmail = process.env.SUPER_ADMIN_EMAIL ?? "admin@budget-app.local";
+  const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD ?? "Admin1234!";
+  const existing = await prisma.user.findUnique({ where: { email: superAdminEmail } });
+  if (!existing) {
+    const passwordHash = await bcrypt.hash(superAdminPassword, 12);
+    await prisma.user.create({
+      data: {
+        email: superAdminEmail,
+        passwordHash,
+        role: "SUPER_ADMIN",
+      },
+    });
+    console.log(`  SUPER_ADMIN created: ${superAdminEmail}`);
+  } else {
+    console.log(`  SUPER_ADMIN already exists: ${superAdminEmail}`);
+  }
 
   console.log("\u2705 Seed complete.");
 }
