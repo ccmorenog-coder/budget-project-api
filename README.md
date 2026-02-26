@@ -1,98 +1,112 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# budget-app — API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+> API REST de gestión financiera personal para el contexto fiscal colombiano.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Construido con **NestJS** · **Prisma v7** · **PostgreSQL 16** · **PrismaPg adapter**
 
-## Description
+---
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Tech Stack
 
-## Project setup
+| Capa | Tecnología |
+|------|-----------|
+| Framework | NestJS 10 |
+| ORM | Prisma 7 (driver adapter: PrismaPg) |
+| Base de datos | PostgreSQL 16 |
+| Auth | NextAuth.js v5 (JWT rotante + PKCE) |
+| Runtime | Node.js ≥ 20 |
+| Contenedor dev | Docker Compose (PostgreSQL en puerto 5433) |
 
-```bash
-$ npm install
-```
+---
 
-## Compile and run the project
+## Prerrequisitos
+
+- Node.js ≥ 20
+- Docker + Docker Compose
+- Copiar `.env.example` → `.env` y completar los valores
+
+---
+
+## Setup local
 
 ```bash
-# development
-$ npm run start
+# 1. Instalar dependencias
+npm install
 
-# watch mode
-$ npm run start:dev
+# 2. Levantar la base de datos
+docker compose -f docker-compose.dev.yml up -d
 
-# production mode
-$ npm run start:prod
+# 3. Aplicar migraciones
+npx prisma migrate dev
+
+# 4. Ejecutar seed inicial
+npx prisma db seed
+
+# 5. Iniciar el servidor de desarrollo
+npm run start:dev
 ```
 
-## Run tests
+La API queda disponible en `http://localhost:3001`.
+
+---
+
+## Variables de entorno
+
+| Variable | Descripción | Ejemplo |
+|----------|-------------|---------|
+| `DATABASE_URL` | Cadena de conexión PostgreSQL | `postgresql://budget_user:pass@localhost:5433/budget_dev` |
+| `NODE_ENV` | Entorno | `development` |
+| `PORT` | Puerto del servidor | `3001` |
+| `SERVER_MASTER_SECRET` | Secreto maestro para cifrado AES-256 | `string-largo-aleatorio` |
+| `JWT_SECRET` | Secreto para firmar JWT | `change-this` |
+| `JWT_EXPIRATION` | TTL del access token | `15m` |
+| `JWT_REFRESH_EXPIRATION` | TTL del refresh token | `7d` |
+
+> Ver `.env.example` para la lista completa.
+
+---
+
+## Scripts disponibles
+
+| Script | Descripción |
+|--------|-------------|
+| `npm run start:dev` | Servidor con watch mode |
+| `npm run build` | Compilar TypeScript |
+| `npm run start:prod` | Ejecutar build compilado |
+| `npm run test` | Tests unitarios |
+| `npm run test:e2e` | Tests end-to-end |
+| `npm run test:cov` | Reporte de cobertura |
+| `npx prisma migrate dev --name <desc>` | Crear y aplicar nueva migración |
+| `npx prisma db seed` | Ejecutar seed (parámetros fiscales, categorías, entidades) |
+| `npx prisma studio` | Visor visual de la base de datos |
+
+---
+
+## Base de datos
+
+- **Schema**: `prisma/schema.prisma` — fuente de verdad
+- **Migración inicial**: `20260225234738_init` — todos los modelos del plan It.0
+- **Seed incluye**: parámetros fiscales 2026 (UVT, SMLMV, GMF, topes DBM), app_config, 11 categorías sistema con subcategorías, 19 entidades financieras colombianas
 
 ```bash
-# unit tests
-$ npm run test
+# Reset completo (solo dev — destruye todos los datos)
+npx prisma migrate reset
 
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+# Ver datos en el navegador
+npx prisma studio
 ```
 
-## Deployment
+---
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+## Visión general de la API
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+- **Base URL**: `http://localhost:3001/api`
+- **Auth**: Bearer JWT — header `Authorization: Bearer <token>` en rutas protegidas
+- **Docs Swagger**: `http://localhost:3001/api/docs` *(disponible en It.1)*
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
+---
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## Documentación
 
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Decisiones de arquitectura, reglas de negocio y modelo de datos:
+→ `project-docs/budget-app/`
