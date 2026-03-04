@@ -1,4 +1,8 @@
-import { BadRequestException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -62,11 +66,17 @@ describe('AuthService', () => {
     it('registers a user successfully with a valid invitation token', async () => {
       mockPrisma.invitationToken.findUnique.mockResolvedValue(validInvitation);
       mockPrisma.user.findUnique.mockResolvedValue(null);
-      mockPrisma.$transaction.mockImplementation(async (cb: (tx: typeof mockPrisma) => Promise<unknown>) => {
-        const newUser = { id: 'user-id', email: 'user@test.com', role: 'USER' };
-        mockPrisma.user.create.mockResolvedValue(newUser);
-        return cb(mockPrisma);
-      });
+      mockPrisma.$transaction.mockImplementation(
+        async (cb: (tx: typeof mockPrisma) => Promise<unknown>) => {
+          const newUser = {
+            id: 'user-id',
+            email: 'user@test.com',
+            role: 'USER',
+          };
+          mockPrisma.user.create.mockResolvedValue(newUser);
+          return cb(mockPrisma);
+        },
+      );
 
       const result = await service.register({
         email: 'user@test.com',
@@ -86,7 +96,11 @@ describe('AuthService', () => {
       });
 
       await expect(
-        service.register({ email: 'user@test.com', password: 'Password1!', invitationToken: 'expired' }),
+        service.register({
+          email: 'user@test.com',
+          password: 'Password1!',
+          invitationToken: 'expired',
+        }),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -97,7 +111,11 @@ describe('AuthService', () => {
       });
 
       await expect(
-        service.register({ email: 'user@test.com', password: 'Password1!', invitationToken: 'used' }),
+        service.register({
+          email: 'user@test.com',
+          password: 'Password1!',
+          invitationToken: 'used',
+        }),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -105,7 +123,11 @@ describe('AuthService', () => {
       mockPrisma.invitationToken.findUnique.mockResolvedValue(validInvitation);
 
       await expect(
-        service.register({ email: 'other@test.com', password: 'Password1!', invitationToken: 'valid-token' }),
+        service.register({
+          email: 'other@test.com',
+          password: 'Password1!',
+          invitationToken: 'valid-token',
+        }),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -114,7 +136,11 @@ describe('AuthService', () => {
       mockPrisma.user.findUnique.mockResolvedValue({ id: 'existing-id' });
 
       await expect(
-        service.register({ email: 'user@test.com', password: 'Password1!', invitationToken: 'valid-token' }),
+        service.register({
+          email: 'user@test.com',
+          password: 'Password1!',
+          invitationToken: 'valid-token',
+        }),
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -129,7 +155,10 @@ describe('AuthService', () => {
         passwordHash,
       });
 
-      const result = await service.login({ email: 'user@test.com', password: 'Password1!' });
+      const result = await service.login({
+        email: 'user@test.com',
+        password: 'Password1!',
+      });
 
       expect(result).toHaveProperty('accessToken');
       expect(result.user.email).toBe('user@test.com');
@@ -168,7 +197,10 @@ describe('AuthService', () => {
         expiresAt: new Date(),
       });
 
-      const result = await service.invite({ email: 'invited@test.com' }, 'admin-id');
+      const result = await service.invite(
+        { email: 'invited@test.com' },
+        'admin-id',
+      );
 
       expect(result).toHaveProperty('token');
       expect(result.email).toBe('invited@test.com');
@@ -185,8 +217,16 @@ describe('AuthService', () => {
 
   describe('refresh', () => {
     it('returns new tokens when refresh token is valid', async () => {
-      mockJwt.verify.mockReturnValue({ sub: 'user-id', email: 'user@test.com', role: 'USER' });
-      mockPrisma.user.findUnique.mockResolvedValue({ id: 'user-id', email: 'user@test.com', role: 'USER' });
+      mockJwt.verify.mockReturnValue({
+        sub: 'user-id',
+        email: 'user@test.com',
+        role: 'USER',
+      });
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user-id',
+        email: 'user@test.com',
+        role: 'USER',
+      });
 
       const result = await service.refresh({ refreshToken: 'valid-refresh' });
 
@@ -195,7 +235,9 @@ describe('AuthService', () => {
     });
 
     it('throws UnauthorizedException when refresh token is invalid', async () => {
-      mockJwt.verify.mockImplementation(() => { throw new Error('invalid'); });
+      mockJwt.verify.mockImplementation(() => {
+        throw new Error('invalid');
+      });
 
       await expect(
         service.refresh({ refreshToken: 'bad-token' }),
@@ -203,7 +245,11 @@ describe('AuthService', () => {
     });
 
     it('throws UnauthorizedException when user no longer exists', async () => {
-      mockJwt.verify.mockReturnValue({ sub: 'ghost-id', email: 'ghost@test.com', role: 'USER' });
+      mockJwt.verify.mockReturnValue({
+        sub: 'ghost-id',
+        email: 'ghost@test.com',
+        role: 'USER',
+      });
       mockPrisma.user.findUnique.mockResolvedValue(null);
 
       await expect(

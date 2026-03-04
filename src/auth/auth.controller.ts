@@ -1,5 +1,17 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Request } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Request,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service.js';
 import { Public } from './decorators/public.decorator.js';
@@ -18,8 +30,14 @@ export class AuthController {
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Registro por token de invitación' })
-  @ApiResponse({ status: 201, description: 'Usuario registrado — devuelve access + refresh token' })
-  @ApiResponse({ status: 400, description: 'Token inválido, expirado o correo ya registrado' })
+  @ApiResponse({
+    status: 201,
+    description: 'Usuario registrado — devuelve access + refresh token',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Token inválido, expirado o correo ya registrado',
+  })
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
@@ -38,9 +56,14 @@ export class AuthController {
   @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Rotar refresh token — devuelve nuevo par access + refresh' })
+  @ApiOperation({
+    summary: 'Rotar refresh token — devuelve nuevo par access + refresh',
+  })
   @ApiResponse({ status: 200, description: 'Tokens renovados' })
-  @ApiResponse({ status: 401, description: 'Refresh token inválido o expirado' })
+  @ApiResponse({
+    status: 401,
+    description: 'Refresh token inválido o expirado',
+  })
   refresh(@Body() dto: RefreshDto) {
     return this.authService.refresh(dto);
   }

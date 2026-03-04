@@ -94,25 +94,25 @@ async function main() {
   console.log("  categories done");
 
   console.log("Seeding financial_entities...");
-  const entities: { name: string; entityType: "BANCO" | "FINTECH" | "COOPERATIVA"; nit?: string }[] = [
-    { name: "Bancolombia", entityType: "BANCO", nit: "890903938" },
-    { name: "Banco de Bogota", entityType: "BANCO", nit: "860007738" },
-    { name: "Davivienda", entityType: "BANCO", nit: "860034313" },
-    { name: "BBVA Colombia", entityType: "BANCO", nit: "860003580" },
-    { name: "Banco Popular", entityType: "BANCO", nit: "899999028" },
-    { name: "Banco de Occidente", entityType: "BANCO", nit: "890300279" },
-    { name: "Itau Colombia", entityType: "BANCO", nit: "890903937" },
-    { name: "Caja Social", entityType: "BANCO", nit: "860007335" },
-    { name: "AV Villas", entityType: "BANCO", nit: "860035827" },
-    { name: "Scotiabank Colpatria", entityType: "BANCO", nit: "860034958" },
-    { name: "Banco Agrario", entityType: "BANCO", nit: "800037800" },
+  const entities: { name: string; entityType: "BANK" | "FINTECH" | "COOPERATIVE"; nit?: string }[] = [
+    { name: "Bancolombia", entityType: "BANK", nit: "890903938" },
+    { name: "Banco de Bogota", entityType: "BANK", nit: "860007738" },
+    { name: "Davivienda", entityType: "BANK", nit: "860034313" },
+    { name: "BBVA Colombia", entityType: "BANK", nit: "860003580" },
+    { name: "Banco Popular", entityType: "BANK", nit: "899999028" },
+    { name: "Banco de Occidente", entityType: "BANK", nit: "890300279" },
+    { name: "Itau Colombia", entityType: "BANK", nit: "890903937" },
+    { name: "Caja Social", entityType: "BANK", nit: "860007335" },
+    { name: "AV Villas", entityType: "BANK", nit: "860035827" },
+    { name: "Scotiabank Colpatria", entityType: "BANK", nit: "860034958" },
+    { name: "Banco Agrario", entityType: "BANK", nit: "800037800" },
     { name: "Nequi", entityType: "FINTECH", nit: "900285884" },
     { name: "Daviplata", entityType: "FINTECH", nit: "800002297" },
     { name: "Rappipay", entityType: "FINTECH" },
     { name: "Movii", entityType: "FINTECH" },
-    { name: "Confiar Cooperativa", entityType: "COOPERATIVA" },
-    { name: "Cootrafa", entityType: "COOPERATIVA" },
-    { name: "JFK Cooperativa", entityType: "COOPERATIVA" },
+    { name: "Confiar Cooperativa", entityType: "COOPERATIVE" },
+    { name: "Cootrafa", entityType: "COOPERATIVE" },
+    { name: "JFK Cooperativa", entityType: "COOPERATIVE" },
   ];
   for (const e of entities) {
     const existing = await prisma.financialEntity.findFirst({ where: { name: e.name, isPublic: true } });

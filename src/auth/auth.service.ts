@@ -71,17 +71,13 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { email: dto.email, deletedAt: null },
-      select: { id: true, email: true, role: true, passwordHash: true },
-    });
+    const user = await this.validateUser(dto.email, dto.password);
 
-    if (!user || !(await bcrypt.compare(dto.password, user.passwordHash))) {
+    if (!user) {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    const { passwordHash: _ph, ...safeUser } = user;
-    return this.signTokens(safeUser);
+    return this.signTokens(user);
   }
 
   async invite(dto: InviteDto, requesterId: string) {
@@ -91,7 +87,9 @@ export class AuthService {
     });
 
     if (!requester || requester.role !== 'SUPER_ADMIN') {
-      throw new ForbiddenException('Solo SUPER_ADMIN puede generar invitaciones');
+      throw new ForbiddenException(
+        'Solo SUPER_ADMIN puede generar invitaciones',
+      );
     }
 
     const expiryHours = parseInt(
@@ -131,25 +129,49 @@ export class AuthService {
     return this.signTokens(user);
   }
 
-  private async signTokens(user: { id: string; email: string; role: string }) {
+  private async validateUser(email: string, password: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: { id: true, email: true, role: true, passwordHash: true },
+    });
+
+    if (!user) {
+      return null;
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+
+    if (!isPasswordValid) {
+      return null;
+    }
+
+    return user;
+  }
+
+  private signTokens(user: { id: string; email: string; role: string }) {
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
       role: user.role,
     };
 
-    const accessExpiresIn = (this.config.get('JWT_ACCESS_EXPIRES_IN') ?? '15m') as `${number}${'s' | 'm' | 'h' | 'd'}`;
-    const refreshExpiresIn = (this.config.get('JWT_REFRESH_EXPIRES_IN') ?? '7d') as `${number}${'s' | 'm' | 'h' | 'd'}`;
+    const accessToken = this.jwt.sign(
+      { sub: payload.sub, email: payload.email, role: payload.role },
+      {
+        secret: this.config.getOrThrow<string>('JWT_SECRET'),
+        expiresIn: (this.config.get<string>('JWT_ACCESS_EXPIRES_IN') ??
+          '15m') as `${number}${'s' | 'm' | 'h' | 'd'}`,
+      },
+    );
 
-    const accessToken = this.jwt.sign(payload, {
-      secret: this.config.getOrThrow<string>('JWT_SECRET'),
-      expiresIn: accessExpiresIn,
-    });
-
-    const refreshToken = this.jwt.sign(payload, {
-      secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'),
-      expiresIn: refreshExpiresIn,
-    });
+    const refreshToken = this.jwt.sign(
+      { sub: payload.sub, email: payload.email, role: payload.role },
+      {
+        secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'),
+        expiresIn: (this.config.get<string>('JWT_REFRESH_EXPIRES_IN') ??
+          '7d') as `${number}${'s' | 'm' | 'h' | 'd'}`,
+      },
+    );
 
     return {
       accessToken,

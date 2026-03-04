@@ -16,10 +16,10 @@ enum UserMode {
   DETAILED
 }
 enum ContractType {
-  EMPLEADO
-  CONTRATISTA
-  PENSIONADO
-  INDEPENDIENTE
+  EMPLOYEE
+  CONTRACTOR
+  PENSIONER
+  SELF_EMPLOYED
 }
 enum SalaryFrequency {
   MONTHLY
@@ -39,29 +39,29 @@ enum WalletTransactionType {
   TRANSFER_IN
   CASH_WITHDRAWAL
   CASH_DEPOSIT
-  IMPUESTO_4X1000
+  GMF_TX
   INVESTMENT_OUT
   INVESTMENT_IN
   ADJUSTMENT
 }
 enum CashWithdrawalChannel {
   ATM
-  CORRESPONSAL
-  VENTANILLA
-  OTRO
+  BANKING_AGENT
+  TELLER
+  OTHER
 }
 enum IncomeType {
-  SALARIO
+  SALARY
   PRIMA
-  COMISION
-  AUXILIO_TRANSPORTE_LEGAL
-  AUXILIO_CONECTIVIDAD_LEGAL
-  AUXILIO_CONECTIVIDAD_EXTRALEGAL
-  HONORARIOS
+  COMMISSION
+  LEGAL_TRANSPORT_AID
+  LEGAL_CONNECTIVITY_AID
+  EXTRALEGAL_CONNECTIVITY_AID
+  PROFESSIONAL_FEES
   PENSION
-  INCAPACIDAD
-  VACACIONES
-  OTRO
+  DISABILITY_LEAVE
+  VACATION_PAY
+  OTHER
 }
 enum RecurrencePeriod {
   DAILY
@@ -77,8 +77,8 @@ enum InterestRateType {
   EA
   MV
   TV
-  NOMINAL_MENSUAL
-  OTRO
+  NOMINAL_MONTHLY
+  OTHER
 }
 enum RateSource {
   USER_INPUT
@@ -91,11 +91,11 @@ enum InsuranceType {
   UNKNOWN
 }
 enum LoanType {
-  CONSUMO
-  VIVIENDA
-  LIBRE_INVERSION
-  AGROPECUARIO
-  OTRO
+  CONSUMER
+  MORTGAGE
+  PERSONAL
+  AGRICULTURAL
+  OTHER
 }
 enum AmortizationType {
   FRENCH
@@ -111,24 +111,24 @@ enum PaymentFrequency {
 }
 enum InvestmentType {
   CDT
-  BOLSILLO_AHORRO
-  OTRO
+  SAVINGS_POCKET
+  OTHER
 }
 enum InvestmentStatus {
   ACTIVE
   CLOSED
 }
 enum FinancialEntityType {
-  BANCO
-  COOPERATIVA
+  BANK
+  COOPERATIVE
   FINTECH
-  OTRO
+  OTHER
 }
 enum ReferenceRateType {
   EA
   MV
   TV
-  NOMINAL_MENSUAL
+  NOMINAL_MONTHLY
 }
 enum NotificationType {
   TAX_THRESHOLD
@@ -138,7 +138,7 @@ enum NotificationType {
   SS_PAYMENT
   RECONCILE_REMINDER
   CDT_MATURITY
-  FOURX1000_ALERT
+  GMF_ALERT
   PRIMA_REMINDER
   ANT_EXPENSE_INSIGHT
   MONTHLY_SUMMARY_EMAIL
@@ -328,7 +328,7 @@ model Wallet {
   type                   WalletType
   accountNumber          String?    @map("account_number")
   bankName               String?    @map("bank_name")
-  is4x1000Exempt         Boolean    @default(false) @map("is_4x1000_exempt")
+  isGmfExempt            Boolean    @default(false) @map("is_gmf_exempt")
   currentBalance         String     @default("0") @map("current_balance")
   isActive               Boolean    @default(true) @map("is_active")
   isLowValueDeposit      Boolean    @default(false) @map("is_low_value_deposit")
@@ -418,7 +418,7 @@ model IncomeRecord {
   healthDeduction     String?    @map("health_deduction")
   pensionDeduction    String?    @map("pension_deduction")
   fspDeduction        String?    @map("fsp_deduction")
-  retencionFuente     String?    @map("retencion_fuente")
+  withholdingTax      String?    @map("withholding_tax")
   variableIncomeNotes String?    @map("variable_income_notes")
   notes               String?
   source              String?
