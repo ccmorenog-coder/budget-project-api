@@ -1,128 +1,76 @@
-# budget-app — API
+# @ccmorenog-coder/budget-api
 
-> API REST de gestión financiera personal para el contexto fiscal colombiano.
+> Backend de alto rendimiento para el control de finanzas personales (Colombia Fiscal 2026).
 
-Construido con **NestJS** · **Prisma v7** · **PostgreSQL 16** · **PrismaPg adapter**
-
----
-
-## Tech Stack
-
-| Capa | Tecnología |
-|------|-----------|
-| Framework | NestJS 10 |
-| ORM | Prisma 7 (driver adapter: PrismaPg) |
-| Base de datos | PostgreSQL 16 |
-| Auth | NextAuth.js v5 (JWT rotante + PKCE) |
-| Runtime | Node.js ≥ 20 |
-| Contenedor dev | Docker Compose (PostgreSQL en puerto 5433) |
+API REST construida con **NestJS 11**, **Prisma 7**, **PostgreSQL 16** y validación mediante **Zod v4**.
 
 ---
 
-## Prerrequisitos
+## 🏗️ Stack Tecnológico
 
-- Node.js ≥ 20
-- Docker + Docker Compose
-- Copiar `.env.example` → `.env` y completar los valores
+- **Framework**: NestJS v11.1.16
+- **ORM**: Prisma v7.4.2 (con PrismaPg adapter)
+- **Validación**: Zod v4.3.6 (vía `@ccmorenog-coder/budget-shared`)
+- **Autenticación**: JWT (Access & Refresh tokens) con Passport.js
+- **Base de Datos**: PostgreSQL 16 (en Docker puerto 5433)
 
 ---
 
-## Setup local
+## 🛠️ Prerrequisitos
+
+- **Node.js**: v22.13.1 (LTS)
+- **Docker**: Para la base de datos local.
+- **Acceso a GitHub Packages**: Requiere un PAT con permisos de lectura para `@ccmorenog-coder/budget-shared`.
+
+---
+
+## 🚀 Inicio Rápido (Desarrollo)
 
 ```bash
 # 1. Instalar dependencias
 npm install
 
-# 2. Levantar la base de datos
+# 2. Iniciar base de datos local
 docker compose -f docker-compose.dev.yml up -d
 
-# 3. Aplicar migraciones
+# 3. Aplicar migraciones y seed de negocio (UVT 2026, Categorías, Entidades)
 npx prisma migrate dev
-
-# 4. Ejecutar seed inicial
 npx prisma db seed
 
-# 5. Iniciar el servidor de desarrollo
+# 4. Iniciar servidor de desarrollo
 npm run start:dev
 ```
 
-La API queda disponible en `http://localhost:3001`.
+---
+
+## 📋 Variables de Entorno (.env)
+
+| Variable | Valor Sugerido | Descripción |
+|----------|----------------|-------------|
+| `DATABASE_URL` | `postgresql://...:5433/budget_dev` | Conexión a la DB local |
+| `JWT_SECRET` | `secret-key-aquí` | Firma de tokens de acceso |
+| `INTERNAL_API_URL` | `http://localhost:3001` | Punto de entrada del API |
 
 ---
 
-## Variables de entorno
+## 🧪 Testing y Calidad
 
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `DATABASE_URL` | Cadena de conexión PostgreSQL | `postgresql://budget_user:pass@localhost:5433/budget_dev` |
-| `NODE_ENV` | Entorno | `development` |
-| `PORT` | Puerto del servidor | `3001` |
-| `SERVER_MASTER_SECRET` | Secreto maestro para cifrado AES-256 | `string-largo-aleatorio` |
-| `JWT_SECRET` | Secreto para firmar access JWT | `change-this` |
-| `JWT_REFRESH_SECRET` | Secreto para firmar refresh JWT | `change-this-refresh` |
-| `JWT_ACCESS_EXPIRES_IN` | TTL del access token | `15m` |
-| `JWT_REFRESH_EXPIRES_IN` | TTL del refresh token | `7d` |
-| `SUPER_ADMIN_EMAIL` | Email del SUPER_ADMIN inicial (seed) | `admin@budget-app.local` |
-| `SUPER_ADMIN_PASSWORD` | Password del SUPER_ADMIN inicial (seed) | `Admin1234!` |
-
-> Ver `.env.example` para la lista completa.
+- `npm run test`: Ejecuta tests unitarios.
+- `npm run build`: Genera el build de producción en `dist/`.
+- `npm run lint`: Verifica el cumplimiento de estándares de código.
 
 ---
 
-## Scripts disponibles
+## 🗺️ Visión del Negocio (Colombia 2026)
 
-| Script | Descripción |
-|--------|-------------|
-| `npm run start:dev` | Servidor con watch mode |
-| `npm run build` | Compilar TypeScript |
-| `npm run start:prod` | Ejecutar build compilado |
-| `npm run test` | Tests unitarios |
-| `npm run test:e2e` | Tests end-to-end |
-| `npm run test:cov` | Reporte de cobertura |
-| `npx prisma migrate dev --name <desc>` | Crear y aplicar nueva migración |
-| `npx prisma db seed` | Ejecutar seed (parámetros fiscales, categorías, entidades, SUPER_ADMIN) |
-| `npx prisma studio` | Visor visual de la base de datos |
+Este API implementa reglas de negocio avanzadas para:
+- Cálculos basados en **UVT** (actualización automática anual).
+- Límites de **Depósitos de Bajo Monto (DBM)**.
+- Exención de **GMF (4x1000)** en la cuenta principal.
+- Soporte para **Primas semestrales** e ingresos variables.
 
 ---
 
-## Base de datos
-
-- **Schema**: `prisma/schema.prisma` — fuente de verdad
-- **Migración inicial**: `20260225234738_init` — todos los modelos del plan It.0
-- **Seed incluye**: parámetros fiscales 2026 (UVT, SMLMV, GMF, topes DBM), app_config, 11 categorías sistema con subcategorías, 19 entidades financieras colombianas, SUPER_ADMIN inicial
-
-```bash
-# Reset completo (solo dev — destruye todos los datos)
-npx prisma migrate reset
-
-# Ver datos en el navegador
-npx prisma studio
-```
-
----
-
-## Visión general de la API
-
-- **Base URL**: `http://localhost:3001`
-- **Auth**: Bearer JWT — header `Authorization: Bearer <token>` en rutas protegidas
-- **Guard global**: todas las rutas requieren JWT excepto las marcadas `@Public()`
-- **Validación**: `ValidationPipe` global — `whitelist`, `forbidNonWhitelisted`, `transform`
-- **Rate limiting**: 60 req/min global; 5 req/min en `/auth/login` y `/auth/register`
-- **Docs Swagger**: `http://localhost:3001/api/docs`
-
-### Endpoints disponibles (It.1)
-
-| Método | Ruta | Auth | Rate limit | Descripción |
-|--------|------|------|------------|-------------|
-| POST | `/auth/register` | Público | 5/min | Registro con token de invitación |
-| POST | `/auth/login` | Público | 5/min | Login — devuelve accessToken + refreshToken |
-| POST | `/auth/refresh` | Público | — | Rota el refresh token — devuelve nuevo par |
-| POST | `/auth/invite` | SUPER_ADMIN | — | Genera token de invitación para un email |
-
----
-
-## Documentación
-
-Decisiones de arquitectura, reglas de negocio y modelo de datos:
-→ `project-docs/budget-app/`
+## ⚖️ Licencia
+ISC - Propiedad de ccmorenog-coder.
 <!-- ia-scaffolding:managed -->
